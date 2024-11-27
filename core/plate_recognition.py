@@ -44,7 +44,6 @@ class PlateRecognition:
                 plate_image = vehicle_roi[pymin:pymax, pxmin:pxmax]
                 return plate_image
         return None
-
     def recognize_plate_text(self, plate_image):
         """
         Reconoce el texto de una placa utilizando OCR.
@@ -55,9 +54,18 @@ class PlateRecognition:
         """
         if plate_image is None or plate_image.size == 0:
             return ""
+        
+        # Preprocesamiento de la imagen de la placa
         gray = cv2.cvtColor(plate_image, cv2.COLOR_BGR2GRAY)
+        gray = cv2.bilateralFilter(gray, 11, 17, 17)  # Eliminar ruido
+        edged = cv2.Canny(gray, 30, 200)  # Detección de bordes
+        
+        # Binarización
+        _, binary = cv2.threshold(edged, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
+        # OCR con Tesseract
         try:
-            text = pytesseract.image_to_string(gray, config='--psm 8')
+            text = pytesseract.image_to_string(binary, config='--psm 8')
         except pytesseract.TesseractNotFoundError:
             print("Tesseract no está instalado o no está en tu PATH.")
             return ""
